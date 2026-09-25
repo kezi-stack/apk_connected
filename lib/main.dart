@@ -54,7 +54,11 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final username = TextEditingController(text: 'emilys');
   final password = TextEditingController(text: 'emilyspass');
+  final firstName = TextEditingController();
+  final lastName = TextEditingController();
+  final email = TextEditingController();
   bool busy = false;
+  bool registering = false;
   String? error;
 
   Future<void> submit() async {
@@ -63,8 +67,21 @@ class _LoginPageState extends State<LoginPage> {
       error = null;
     });
     try {
-      await widget.auth.login(username.text, password.text);
-      if (mounted) {
+      if (registering) {
+        await widget.auth.register(firstName.text, lastName.text, email.text);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profil créé. Connecte-toi avec tes identifiants.'),
+            ),
+          );
+          setState(() => registering = false);
+        }
+        return;
+      } else {
+        await widget.auth.login(username.text, password.text);
+      }
+      if (mounted && !registering) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) =>
@@ -97,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Bon retour.',
+                  registering ? 'Créer un espace.' : 'Bon retour.',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -109,29 +126,58 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 32),
                 if (error != null) _Notice(text: error!),
-                TextField(
-                  controller: username,
-                  decoration: const InputDecoration(
-                    labelText: 'Identifiant',
-                    filled: true,
-                    fillColor: Colors.white,
+                if (registering) ...[
+                  TextField(
+                    controller: firstName,
+                    decoration: const InputDecoration(
+                      labelText: 'Prénom',
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: password,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Mot de passe',
-                    filled: true,
-                    fillColor: Colors.white,
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: lastName,
+                    decoration: const InputDecoration(
+                      labelText: 'Nom',
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Démo : emilys / emilyspass',
-                  style: TextStyle(color: Colors.black45),
-                ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: email,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                  ),
+                ] else ...[
+                  TextField(
+                    controller: username,
+                    decoration: const InputDecoration(
+                      labelText: 'Identifiant',
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: password,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Mot de passe',
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Démo : emilys / emilyspass',
+                    style: TextStyle(color: Colors.black45),
+                  ),
+                ],
                 const SizedBox(height: 22),
                 SizedBox(
                   width: double.infinity,
@@ -140,7 +186,20 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: busy ? null : submit,
                     child: busy
                         ? const CircularProgressIndicator()
-                        : const Text('Se connecter'),
+                        : Text(
+                            registering ? 'Créer le profil' : 'Se connecter',
+                          ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: busy
+                      ? null
+                      : () => setState(() {
+                          registering = !registering;
+                          error = null;
+                        }),
+                  child: Text(
+                    registering ? 'J’ai déjà un compte' : 'Créer un profil',
                   ),
                 ),
               ],

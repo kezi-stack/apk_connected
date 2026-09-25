@@ -14,7 +14,7 @@ class AppFailure implements Exception {
 class AuthRepository {
   AuthRepository(this.api, this.store);
   final ApiClient api;
-  final LocalStore store;
+  final SessionStore store;
 
   bool get isAuthenticated => store.token != null;
   String? get currentUser => store.userName;
@@ -27,6 +27,7 @@ class AuthRepository {
       );
       await store.saveSession(
         token: response.data['accessToken'] as String,
+        refreshToken: response.data['refreshToken'] as String? ?? '',
         userName: response.data['firstName'] as String? ?? username,
       );
     } on DioException catch (error) {
@@ -54,7 +55,7 @@ class AuthRepository {
 class CatalogRepository {
   CatalogRepository(this.api, this.store);
   final ApiClient api;
-  final LocalStore store;
+  final SessionStore store;
 
   Future<List<Product>> products() async => _fetchList<Product>(
     cacheKey: 'products',
